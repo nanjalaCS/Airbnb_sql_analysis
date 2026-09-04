@@ -1,0 +1,135 @@
+cells:
+  - kind: 2
+    value: "DROP TABLE airbnb_nyc PURGE;\r
+
+      \r
+
+      CREATE TABLE airbnb_nyc (\r
+
+      \    id                              NUMBER          PRIMARY KEY,\r
+
+      \    name                            VARCHAR2(400),\r
+
+      \    host_id                         NUMBER,\r
+
+      \    host_name                       VARCHAR2(200),\r
+
+      \    neighbourhood_group             VARCHAR2(50),\r
+
+      \    neighbourhood                   VARCHAR2(100),\r
+
+      \    latitude                        NUMBER(9,6),\r
+
+      \    longitude                       NUMBER(9,6),\r
+
+      \    room_type                       VARCHAR2(50),\r
+
+      \    price                           NUMBER(10,2),\r
+
+      \    minimum_nights                  NUMBER,\r
+
+      \    number_of_reviews               NUMBER,\r
+
+      \    last_review                     DATE,\r
+
+      \    reviews_per_month               NUMBER(6,2),\r
+
+      \    calculated_host_listings_count  NUMBER,\r
+
+      \    availability_365                NUMBER\r
+
+      );"
+    languageId: oracle-sql
+  - kind: 2
+    value: "CREATE INDEX ix_airbnb_borough   ON airbnb_nyc(neighbourhood_group);\r
+
+      CREATE INDEX ix_airbnb_roomtype  ON airbnb_nyc(room_type);\r
+
+      CREATE INDEX ix_airbnb_price     ON airbnb_nyc(price);\r
+
+      CREATE INDEX ix_airbnb_host      ON airbnb_nyc(host_id);"
+    languageId: oracle-sql
+  - kind: 2
+    value: "INSERT INTO airbnb_nyc (\r
+
+      \    id, name, host_id, host_name, neighbourhood_group, neighbourhood,\r
+
+      \    latitude, longitude, room_type, price, minimum_nights,
+      number_of_reviews,\r
+
+      \    last_review, reviews_per_month, calculated_host_listings_count,
+      availability_365\r
+
+      )\r
+
+      SELECT\r
+
+      \    id, name, host_id, host_name, neighbourhood_group, neighbourhood,\r
+
+      \    latitude, longitude, room_type, price, minimum_nights,
+      number_of_reviews,\r
+
+      \    TO_DATE(NULLIF(TRIM(last_review), ''), 'YYYY-MM-DD'),\r
+
+      \    reviews_per_month, calculated_host_listings_count, availability_365\r
+
+      FROM AIRBNB_NYC_STAGING;\r
+
+      \r
+
+      COMMIT;"
+    languageId: oracle-sql
+  - kind: 2
+    value: SELECT COUNT(*) FROM AIRBNB_NYC
+    languageId: oracle-sql
+  - kind: 2
+    value: ""
+    languageId: oracle-sql
+  - kind: 2
+    value: "SELECT * FROM AIRBNB_NYC\r
+
+      FETCH FIRST 5 ROWS ONLY;"
+    languageId: oracle-sql
+  - kind: 2
+    value: DESC AIRBNB_NYC
+    languageId: oracle-sql
+  - kind: 2
+    value: SELECT COUNT(*) FROM AIRBNB_NYC
+    languageId: oracle-sql
+  - kind: 2
+    value: DESC AIRBNB_NYC
+    languageId: oracle-sql
+  - kind: 2
+    value: "SELECT \r
+
+      --  SUM(CASE WHEN NAME IS NULL THEN 1 ELSE 0  END) AS missing_name,\r
+
+      --  SUM(CASE WHEN HOST_ID IS NULL THEN 1 ELSE 0 END ) AS missing_hostid,\r
+
+      --  SUM(CASE WHEN HOST_NAME IS NULL THEN 1 ELSE 0 END) AS
+      missing_hostname,\r
+
+      --  SUM(CASE WHEN NEIGHBOURHOOD_GROUP IS NULL THEN 1 ELSE 0 END) AS
+      missing_group,\r
+
+      --  SUM(CASE WHEN NEIGHBOURHOOD IS NULL THEN 1 ELSE 0 END) AS
+      missing_neighborhood,\r
+
+      --  SUM(CASE WHEN LATITUDE IS NULL THEN 1 ELSE 0 END) AS
+      missing_latitude,\r
+
+      \ SUM(CASE WHEN PRICE IS NULL THEN 1 ELSE 0 END) AS missing_price,\r
+
+      \ SUM(CASE WHEN LAST_REVIEW IS NULL THEN 1 ELSE 0 END) AS missing_date,\r
+
+      \ SUM(CASE WHEN  REVIEWS_PER_MONTH IS NULL THEN 1 ELSE 0 END) AS
+      missing_reviews,\r
+
+      \ SUM(CASE WHEN MINIMUM_NIGHTS  IS NULL THEN 1 ELSE 0 END) AS
+      missing_minimum\r
+
+      \ FROM AIRBNB_NYC\r\n"
+    languageId: oracle-sql
+  - kind: 2
+    value: ""
+    languageId: oracle-sql
