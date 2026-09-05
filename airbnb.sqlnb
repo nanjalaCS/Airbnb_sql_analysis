@@ -1,4 +1,13 @@
 cells:
+  - kind: 1
+    value: "--=====================================================================\
+      ===========\r
+
+      -- 1. TABLE CREATION (DDL)\r
+
+      --=======================================================================\
+      ========="
+    languageId: markdown
   - kind: 2
     value: "DROP TABLE airbnb_nyc PURGE;\r
 
@@ -50,7 +59,20 @@ cells:
       CREATE INDEX ix_airbnb_host      ON airbnb_nyc(host_id);"
     languageId: oracle-sql
   - kind: 2
-    value: "INSERT INTO airbnb_nyc (\r
+    value: "--
+      =======================================================================\r
+
+      -- Loading the CSV (SQL Developer Import Wizard + SQL*Loader
+      alternative)\r
+
+      --
+      ========================================================================\r
+
+      \r
+
+      \r
+
+      INSERT INTO airbnb_nyc (\r
 
       \    id, name, host_id, host_name, neighbourhood_group, neighbourhood,\r
 
@@ -79,11 +101,17 @@ cells:
 
       COMMIT;"
     languageId: oracle-sql
+  - kind: 1
+    value: "--=====================================================================\
+      ===========\r
+
+      -- 3.Data quality checks\r
+
+      --=======================================================================\
+      ========="
+    languageId: markdown
   - kind: 2
     value: SELECT COUNT(*) FROM AIRBNB_NYC
-    languageId: oracle-sql
-  - kind: 2
-    value: ""
     languageId: oracle-sql
   - kind: 2
     value: "SELECT * FROM AIRBNB_NYC\r
@@ -94,13 +122,13 @@ cells:
     value: DESC AIRBNB_NYC
     languageId: oracle-sql
   - kind: 2
-    value: SELECT COUNT(*) FROM AIRBNB_NYC
-    languageId: oracle-sql
-  - kind: 2
-    value: DESC AIRBNB_NYC
-    languageId: oracle-sql
-  - kind: 2
-    value: "SELECT \r
+    value: "-- Check for count of null values in each column\r
+
+      \r
+
+      \r
+
+      SELECT \r
 
       --  SUM(CASE WHEN NAME IS NULL THEN 1 ELSE 0  END) AS missing_name,\r
 
@@ -131,5 +159,50 @@ cells:
       \ FROM AIRBNB_NYC\r\n"
     languageId: oracle-sql
   - kind: 2
-    value: ""
+    value: "-- check for duplicate values\r
+
+      SELECT id, \r
+
+      \       COUNT(*) AS cnt\r
+
+      FROM AIRBNB_NYC\r
+
+      GROUP BY id\r
+
+      HAVING COUNT(*) > 1;"
     languageId: oracle-sql
+  - kind: 2
+    value: "-- FIND LISTING PRICED AT 0\r
+
+      \r
+
+      SELECT COUNT(*) as zero_price_listings\r
+
+      FROM AIRBNB_NYC\r
+
+      WHERE PRICE = 0;"
+    languageId: oracle-sql
+  - kind: 2
+    value: "SELECT id, name, minimum_nights\r
+
+      FROM airbnb_nyc\r
+
+      WHERE minimum_nights > 365\r
+
+      ORDER BY minimum_nights DESC;"
+    languageId: oracle-sql
+  - kind: 2
+    value: "--=====================================================================\
+      ===========\r
+
+      -- 4. DATA CLEANING\r
+
+      --=======================================================================\
+      ========="
+    languageId: oracle-sql
+  - kind: 2
+    value: -- replace missing values
+    languageId: oracle-sql
+  - kind: 1
+    value: ""
+    languageId: markdown
