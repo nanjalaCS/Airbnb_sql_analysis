@@ -201,8 +201,104 @@ cells:
       ========="
     languageId: oracle-sql
   - kind: 2
-    value: -- replace missing values
+    value: "-- replace missing values\r
+
+      CREATE OR REPLACE VIEW v_airbnb_clean AS\r
+
+      SELECT a.*,\r
+
+      NVL(REVIEWS_PER_MONTH, 0 ) AS reviews_per_month_clean,\r
+
+      CASE WHEN MINIMUM_NIGHTS > 365 THEN 365 ELSE MINIMUM_NIGHTS END AS
+      minimum_nights_capped\r
+
+      FROM AIRBNB_NYC a\r
+
+      WHERE price > 0\r\n"
     languageId: oracle-sql
   - kind: 1
-    value: ""
+    value: "--=====================================================================\
+      ===========\r
+
+      -- 5. DESCRIPTIVE STATISTICS\r
+
+      --=======================================================================\
+      ========="
     languageId: markdown
+  - kind: 2
+    value: "SELECT\r
+
+      COUNT(PRICE) AS cnt,\r
+
+      ROUND(SUM(PRICE),2) AS total_value,\r
+
+      ROUND(MIN(PRICE),2) AS lowest_price,\r
+
+      ROUND(MAX(PRICE),2) AS highest_price,\r
+
+      ROUND(AVG(PRICE),2) AS mean_price,\r
+
+      ROUND(STDDEV(PRICE),2) AS stddev_price,\r
+
+      ROUND(PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY PRICE),2) AS
+      q3_price,\r
+
+      ROUND(PERCENTILE_CONT(0.25) WITHIN GROUP(ORDER BY PRICE),2) AS q1_price\r
+
+      FROM V_AIRBNB_CLEAN\r\n"
+    languageId: oracle-sql
+  - kind: 2
+    value: "SELECT \r
+
+      ROOM_TYPE,\r
+
+      COUNT(PRICE) AS cnt,\r
+
+      ROUND(SUM(PRICE),2) AS total_value,\r
+
+      ROUND(MIN(PRICE),2) AS lowest_price,\r
+
+      ROUND(MAX(PRICE),2) AS highest_price,\r
+
+      ROUND(AVG(PRICE),2) AS mean_price,\r
+
+      ROUND(STDDEV(PRICE),2) AS stddev_price,\r
+
+      ROUND(PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY PRICE),2) AS
+      q3_price,\r
+
+      ROUND(PERCENTILE_CONT(0.25) WITHIN GROUP(ORDER BY PRICE),2) AS q1_price\r
+
+      FROM V_AIRBNB_CLEAN\r
+
+      GROUP BY ROOM_TYPE\r
+
+      ORDER BY lowest_price DESC;"
+    languageId: oracle-sql
+  - kind: 2
+    value: "-- Stats summary as per the neighbourhood_group\r
+
+      SELECT\r
+
+      \    neighbourhood_group,\r
+
+      \    COUNT(*)                                   AS n,\r
+
+      \    ROUND(AVG(price),2)                        AS mean_price,\r
+
+      \    ROUND(MEDIAN(price),2)                     AS median_price,\r
+
+      \    ROUND(STDDEV(price),2)                     AS stddev_price,\r
+
+      \    ROUND(AVG(minimum_nights_capped),1)        AS avg_min_nights,\r
+
+      \    ROUND(AVG(number_of_reviews),1)            AS avg_reviews,\r
+
+      \    ROUND(AVG(availability_365),1)             AS avg_availability\r
+
+      FROM v_airbnb_clean\r
+
+      GROUP BY neighbourhood_group\r
+
+      ORDER BY mean_price DESC;"
+    languageId: oracle-sql
