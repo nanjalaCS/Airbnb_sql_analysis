@@ -119,6 +119,17 @@ cells:
       FETCH FIRST 5 ROWS ONLY;"
     languageId: oracle-sql
   - kind: 2
+    value: "SELECT COUNT(DISTINCT HOST_ID) as HOST,\r
+
+      \r
+
+      ROOM_TYPE\r
+
+      FROM V_AIRBNB_CLEAN\r
+
+      GROUP BY ROOM_TYPE\r\n"
+    languageId: oracle-sql
+  - kind: 2
     value: DESC AIRBNB_NYC
     languageId: oracle-sql
   - kind: 2
@@ -301,4 +312,128 @@ cells:
       GROUP BY neighbourhood_group\r
 
       ORDER BY mean_price DESC;"
+    languageId: oracle-sql
+  - kind: 1
+    value: "--=====================================================================\
+      ===========\r
+
+      -- 6. DISTRIBUTION & OUTLIER ANALYSIS (IQR method)\r
+
+      --=======================================================================\
+      ========="
+    languageId: markdown
+  - kind: 2
+    value: "WITH bound AS (\r
+
+      \    SELECT \r
+
+      \    PERCENTILE_CONT(0.25) WITHIN GROUP(ORDER BY price) AS q1,\r
+
+      \    PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY price) AS q3\r
+
+      \    FROM v_airbnb_clean\r
+
+      \ )\r
+
+      \ SELECT\r
+
+      \ b.q1, b.q3,\r
+
+      \ (b.q3 - b.q1) AS iqr,\r
+
+      \ b.q3 + 1.5*(b.q3-b.q1) AS upper_outlier_bound,\r
+
+      \ b.q3 - 1.5*(b.q3- b.q1) AS lower_outlier_bound\r
+
+      \ FROM bound b\r\n"
+    languageId: oracle-sql
+  - kind: 2
+    value: "--identify highest outliers in prices\r
+
+      WITH bound AS (\r
+
+      \    SELECT \r
+
+      \    PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY price) AS q1,\r
+
+      \    PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY PRICE) AS q3\r
+
+      \    FROM V_AIRBNB_CLEAN\r
+
+      )\r
+
+      SELECT \r
+
+      \    a.NEIGHBOURHOOD ,\r
+
+      \    a.NEIGHBOURHOOD_GROUP, \r
+
+      \    a.PRICE, \r
+
+      \    a.ROOM_TYPE \r
+
+      FROM  V_AIRBNB_CLEAN a, bound b\r
+
+      WHERE price > b.q3 + 1.5*(b.q3 -b.q1 )\r
+
+      ORDER BY a.PRICE DESC\r
+
+      FETCH FIRST 5 ROWS ONLY;\r
+
+      \      \r\n"
+    languageId: oracle-sql
+  - kind: 2
+    value: DESC V_AIRBNB_CLEAN
+    languageId: oracle-sql
+  - kind: 2
+    value: "--identify (lowest) outliers in prices\r
+
+      WITH bound AS (\r
+
+      \    SELECT \r
+
+      \    PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY price) as q1,\r
+
+      \    PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY price) as q3\r
+
+      \    FROM V_AIRBNB_CLEAN\r
+
+      )\r
+
+      SELECT \r
+
+      \    a.NEIGHBOURHOOD_GROUP,\r
+
+      \    a.NEIGHBOURHOOD,\r
+
+      \    a.ROOM_TYPE,\r
+
+      \    a.PRICE \r
+
+      FROM V_AIRBNB_CLEAN a, bound b\r
+
+      WHERE price < b.q3 - 1.5*(b.q3-q1)\r
+
+      ORDER BY price DESC\r
+
+      FETCH FIRST 5 ROWS ONLY"
+    languageId: oracle-sql
+  - kind: 2
+    value: "--bin the price distribution\r
+
+      SELECT \r
+
+      WIDTH_BUCKET(price, 0, 2000, 20) AS price_bucket,\r
+
+      MIN(price) AS min_bucket,\r
+
+      MAX(price) AS max_bucket,\r
+
+      COUNT(*)\r
+
+      FROM V_AIRBNB_CLEAN\r
+
+      GROUP BY WIDTH_BUCKET(price, 0, 2000, 20)\r
+
+      ORDER BY price_bucket"
     languageId: oracle-sql
