@@ -343,7 +343,7 @@ cells:
 
       \ b.q3 + 1.5*(b.q3-b.q1) AS upper_outlier_bound,\r
 
-      \ b.q3 - 1.5*(b.q3- b.q1) AS lower_outlier_bound\r
+      \ GREATEST(b.q3 - 1.5*(b.q3- b.q1), 0) AS lower_outlier_bound\r
 
       \ FROM bound b\r\n"
     languageId: oracle-sql
@@ -436,4 +436,312 @@ cells:
       GROUP BY WIDTH_BUCKET(price, 0, 2000, 20)\r
 
       ORDER BY price_bucket"
+    languageId: oracle-sql
+  - kind: 1
+    value: "--=====================================================================\
+      ===========\r
+
+      -- 7. GROUP COMPARISONS (Borough x Room Type)\r
+
+      --=======================================================================\
+      ========="
+    languageId: markdown
+  - kind: 2
+    value: "WITH pivoted_prices AS(\r
+
+      \    SELECT  neighbourhood_group, room_type, price\r
+
+      \    FROM V_AIRBNB_CLEAN\r
+
+      ),\r
+
+      pivoted as(\r
+
+      \    SELECT * FROM pivoted_prices(\r
+
+      \        PIVOT(\r
+
+      \            AVG(Price) AS avg_price,\r
+
+      \            COUNT(*) AS N\r
+
+      \            FOR room_type IN (\r
+
+      \                'Entire home/apt' AS entire_home,\r
+
+      \                'Private room'    AS private_room,\r
+
+      \                'Shared room'     AS shared_room\r
+
+      \            )\r
+
+      \            )\r
+
+      \    )\r
+
+      )\r
+
+      SELECT\r
+
+      \    neighbourhood_group,\r
+
+      \    ROUND(entire_home_avg_price)  AS
+      entire_home_avg_price,  entire_home_n,\r
+
+      \    ROUND(private_room_avg_price) AS private_room_avg_price,
+      private_room_n,\r
+
+      \    ROUND(shared_room_avg_price)  AS
+      shared_room_avg_price,  shared_room_n\r
+
+      FROM pivoted\r
+
+      ORDER BY neighbourhood_group;\r\n"
+    languageId: oracle-sql
+  - kind: 1
+    value: "--=========================================================\r
+
+      -- 8. CORRELATION ANALYSIS\r
+
+      --========================================================="
+    languageId: markdown
+  - kind: 2
+    value: "--pairwise pearson correlation between price and other numeric
+      variables\r
+
+      -- Close to +1 - highly correlated, \r
+
+      -- close to -1,negativly corelated, \r
+
+      --  0- no corelation\r
+
+      \r
+
+      SELECT\r
+
+      \r
+
+      ROUND(CORR(price, minimum_nights_capped),3) AS corr_price_minnights,\r
+
+      ROUND(CORR(price, number_of_reviews),3)  AS corr_price_reviews,\r
+
+      ROUND(CORR(price, reviews_per_month_clean),3) AS corr_price_revpm,\r
+
+      ROUND(CORR(price, calculated_host_listings_count),3) AS
+      corr_price_hostlistings,\r
+
+      ROUND(CORR(price, availability_365), 3) AS corr_price_availability,\r
+
+      ROUND(CORR(number_of_reviews, reviews_per_month_clean),3) AS
+      corr_reviews_revpm\r
+
+      \r
+
+      \r
+
+      FROM V_AIRBNB_CLEAN\r
+
+      \r\n"
+    languageId: oracle-sql
+  - kind: 2
+    value: "-- Simple linear regression of price on availability_365
+      (slope/intercept/R²)\r
+
+      SELECT\r
+
+      \    ROUND(REGR_SLOPE(price, availability_365),4)     AS slope,\r
+
+      \    ROUND(REGR_INTERCEPT(price, availability_365),4) AS intercept,\r
+
+      \    ROUND(REGR_R2(price, availability_365),4)        AS r_squared\r
+
+      FROM v_airbnb_clean;"
+    languageId: oracle-sql
+  - kind: 1
+    value: "===========================================================\r
+
+      -- 9. WINDOW FUNCTIONS & RANKING\r
+
+      ========================================================="
+    languageId: markdown
+  - kind: 2
+    value: "-- Top 5 most expensive listings per borough- use subquery\r
+
+      SELECT *\r
+
+      FROM (\r
+
+      \    SELECT\r
+
+      \        neighbourhood_group, name, room_type, price,\r
+
+      \        RANK() OVER (PARTITION BY neighbourhood_group ORDER BY price
+      DESC) AS rnk\r
+
+      \    FROM v_airbnb_clean\r
+
+      )\r
+
+      WHERE rnk <= 5\r
+
+      ORDER BY neighbourhood_group, rnk;"
+    languageId: oracle-sql
+  - kind: 2
+    value: "\r
+
+      --use CTE\r
+
+      WITH rank AS(\r
+
+      \    SELECT\r
+
+      \        neighbourhood_group, name, room_type, price,\r
+
+      \        RANK() OVER (PARTITION BY neighbourhood_group ORDER BY price
+      DESC) AS rnk\r
+
+      \    FROM v_airbnb_clean\r
+
+      )\r
+
+      SELECT * FROM rank\r
+
+      WHERE rnk <= 5\r
+
+      ORDER BY neighbourhood_group, rnk;"
+    languageId: oracle-sql
+  - kind: 2
+    value: "-- Each listing's price vs the average price of its neighbourhood (%
+      deviation)\r
+
+      SELECT\r
+
+      \    id, name, neighbourhood, price,\r
+
+      \    ROUND(AVG(price) OVER (PARTITION BY neighbourhood),2)            AS
+      nbhd_avg_price,\r
+
+      \    ROUND(100*(price - AVG(price) OVER (PARTITION BY neighbourhood))\r
+
+      \              / AVG(price) OVER (PARTITION BY neighbourhood), 1)     AS
+      pct_vs_nbhd_avg\r
+
+      FROM v_airbnb_clean\r
+
+      ORDER BY pct_vs_nbhd_avg DESC\r
+
+      FETCH FIRST 20 ROWS ONLY;"
+    languageId: oracle-sql
+  - kind: 2
+    value: "-- Running cumulative share of listings by descending price
+      (concentration curve)\r
+
+      SELECT\r
+
+      \    price,\r
+
+      \    listing_rank,\r
+
+      \    ROUND(100 * cum_listings / total_listings, 2) AS cum_pct_listings\r
+
+      FROM (\r
+
+      \    SELECT\r
+
+      \        price,\r
+
+      \        ROW_NUMBER() OVER (ORDER BY price DESC)        AS listing_rank,\r
+
+      \        SUM(1) OVER (ORDER BY price DESC)               AS
+      cum_listings,\r
+
+      \        COUNT(*) OVER ()                                 AS
+      total_listings\r
+
+      \    FROM v_airbnb_clean\r
+
+      )\r
+
+      WHERE MOD(listing_rank, 5000) = 0;"
+    languageId: oracle-sql
+  - kind: 1
+    value: "=======================================================================\
+      =========\r
+
+      \ 10. HOST & NEIGHBOURHOOD ANALYSIS\r
+
+      =========================================================================\
+      ======="
+    languageId: markdown
+  - kind: 2
+    value: "--TOP 10 HOSTS BY TOTAL LISTIN COUNT\r
+
+      SELECT host_id,\r
+
+      \      MAX(HOST_NAME) AS host_name,\r
+
+      \       COUNT(*) AS listing_count,\r
+
+      \       ROUND(AVG(PRICE),2) AS avg_price\r
+
+      FROM V_AIRBNB_CLEAN\r
+
+      GROUP BY HOST_ID, HOST_NAME\r
+
+      ORDER BY listing_count DESC\r
+
+      FETCH FIRST 10 ROWS ONLY;"
+    languageId: oracle-sql
+  - kind: 2
+    value: "-- Top 10 neighbourhoods by listing count\r
+
+      SELECT \r
+
+      \    neighbourhood,\r
+
+      \    COUNT(*) AS listing_count\r
+
+      FROM v_airbnb_clean\r
+
+      GROUP BY neighbourhood\r
+
+      ORDER BY listing_count DESC\r
+
+      FETCH FIRST 10 ROWS ONLY;"
+    languageId: oracle-sql
+  - kind: 2
+    value: "-- Top 10 priciest neighbourhoods (min 10 listings, avoids noise from
+      tiny samples)\r
+
+      SELECT neighbourhood, COUNT(*) AS n, ROUND(AVG(price),2) AS avg_price\r
+
+      FROM v_airbnb_clean\r
+
+      GROUP BY neighbourhood\r
+
+      HAVING COUNT(*) >= 10\r
+
+      ORDER BY avg_price DESC\r
+
+      FETCH FIRST 10 ROWS ONLY;"
+    languageId: oracle-sql
+  - kind: 2
+    value: "-- Hosts who appear to be commercial operators (many listings, low avg
+      availability)\r
+
+      SELECT\r
+
+      \    host_id, MAX(host_name) AS host_name,\r
+
+      \     COUNT(*) AS listing_count,\r
+
+      \    ROUND(AVG(availability_365),1) AS avg_availability\r
+
+      FROM v_airbnb_clean\r
+
+      GROUP BY host_id\r
+
+      HAVING COUNT(*) >= 10\r
+
+      ORDER BY listing_count DESC;\r\n"
     languageId: oracle-sql
